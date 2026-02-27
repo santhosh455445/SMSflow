@@ -1,228 +1,695 @@
 <!DOCTYPE html>
 <html lang="en">
-
 <head>
-    <meta charset="UTF-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>School MS — User Flow Documentation</title>
-    <link
-        href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Manrope:wght@600;700;800&display=swap"
-        rel="stylesheet">
-    <link rel="stylesheet" href="styles.css">
-</head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>School ERP — Architecture</title>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=IBM+Plex+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bg: #f5f6f8;
+    --white: #ffffff;
+    --text-primary: #0f1117;
+    --text-secondary: #4b5563;
+    --text-muted: #9ca3af;
+    --border: #e5e7eb;
+    --border-dark: #d1d5db;
+    --accent: #1a56db;
+    --accent-light: #eff6ff;
+    --success: #059669;
+    --success-light: #ecfdf5;
+    --warning: #d97706;
+    --warning-light: #fffbeb;
+    --danger: #dc2626;
+    --danger-light: #fef2f2;
+    --purple: #7c3aed;
+    --purple-light: #f5f3ff;
+    --pink: #be185d;
+    --pink-light: #fdf2f8;
+  }
 
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+
+  body {
+    background: var(--bg);
+    color: var(--text-primary);
+    font-family: 'Inter', sans-serif;
+    min-height: 100vh;
+  }
+
+  /* ── TOPBAR ── */
+  .topbar {
+    background: var(--white);
+    border-bottom: 1px solid var(--border);
+    padding: 0 32px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    height: 56px;
+    position: sticky;
+    top: 0;
+    z-index: 100;
+  }
+  .logo {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    font-weight: 600;
+    font-size: 0.88rem;
+    color: var(--text-primary);
+  }
+  .logo-dot { width: 8px; height: 8px; border-radius: 50%; background: var(--accent); }
+  .logo span { color: var(--text-muted); font-weight: 400; }
+
+  .nav-tabs {
+    display: flex;
+    gap: 2px;
+    background: var(--bg);
+    padding: 4px;
+    border-radius: 8px;
+    border: 1px solid var(--border);
+  }
+  .nav-tab {
+    font-size: 0.78rem;
+    font-weight: 500;
+    padding: 6px 18px;
+    border-radius: 6px;
+    border: none;
+    background: transparent;
+    color: var(--text-secondary);
+    cursor: pointer;
+    transition: all 0.15s;
+  }
+  .nav-tab.active {
+    background: var(--white);
+    color: var(--text-primary);
+    box-shadow: 0 1px 3px rgba(0,0,0,0.08), 0 0 0 1px var(--border);
+  }
+  .nav-tab:hover:not(.active) { color: var(--text-primary); }
+
+  /* ── MAIN ── */
+  .main {
+    max-width: 780px;
+    margin: 0 auto;
+    padding: 44px 24px 80px;
+  }
+
+  #view-arch, #view-roles, #view-flows { display: none; }
+  #view-arch { display: block; }
+
+  .page-title { margin-bottom: 36px; }
+  .page-title h2 { font-size: 1.2rem; font-weight: 600; margin-bottom: 4px; }
+  .page-title p { font-size: 0.76rem; color: var(--text-muted); font-family: 'IBM Plex Mono', monospace; }
+
+  /* ══════════════════════════════
+     FLOWCHART
+  ══════════════════════════════ */
+  .flowchart {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 0;
+  }
+
+  /* ── GROUP BOX (dashed outline section) ── */
+  .fc-group {
+    width: 100%;
+    border: 1.5px dashed var(--border-dark);
+    border-radius: 14px;
+    padding: 20px 24px 24px;
+    position: relative;
+    background: var(--white);
+    animation: fadeUp 0.45s ease both;
+  }
+  .fc-group-label {
+    position: absolute;
+    top: -12px;
+    left: 20px;
+    background: var(--white);
+    padding: 0 10px;
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 0.65rem;
+    font-weight: 600;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+    border-radius: 4px;
+  }
+  .label-users    { color: var(--accent); }
+  .label-frontend { color: var(--purple); }
+  .label-network  { color: var(--warning); }
+  .label-backend  { color: var(--success); }
+  .label-database { color: var(--pink); }
+
+  /* ── NODES ROW ── */
+  .fc-nodes {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 10px;
+    justify-content: center;
+  }
+
+  /* ── INDIVIDUAL FLOWCHART NODE ── */
+  .fc-node {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 6px;
+    padding: 14px 18px 12px;
+    border: 1.5px solid var(--border-dark);
+    border-radius: 10px;
+    background: var(--white);
+    min-width: 110px;
+    transition: box-shadow 0.15s, border-color 0.15s;
+    cursor: default;
+    text-align: center;
+  }
+  .fc-node:hover {
+    box-shadow: 0 4px 14px rgba(0,0,0,0.07);
+    border-color: #b3b9c4;
+  }
+  .fc-node-ico { font-size: 1.5rem; line-height: 1; }
+  .fc-node-name {
+    font-size: 0.88rem;
+    font-weight: 600;
+    color: var(--text-primary);
+    line-height: 1.3;
+  }
+  .fc-node-sub {
+    font-size: 0.7rem;
+    color: var(--text-muted);
+    font-family: 'IBM Plex Mono', monospace;
+  }
+
+  /* Wide node (spans full) */
+  .fc-node-wide {
+    flex: 1;
+    min-width: 200px;
+    flex-direction: row;
+    gap: 12px;
+    text-align: left;
+    align-items: center;
+  }
+  .fc-node-wide .fc-node-name { font-size: 0.92rem; }
+
+  /* NestJS server block */
+  .fc-server {
+    width: 100%;
+    padding: 14px 20px;
+    border: 2px solid #a7f3d0;
+    border-radius: 10px;
+    background: var(--success-light);
+    text-align: center;
+    margin-bottom: 16px;
+  }
+  .fc-server-name {
+    font-size: 1rem;
+    font-weight: 700;
+    color: var(--success);
+    font-family: 'IBM Plex Mono', monospace;
+    letter-spacing: 0.02em;
+  }
+  .fc-server-sub { font-size: 0.72rem; color: #6ee7b7; margin-top: 2px; }
+
+  /* Network pill */
+  .fc-network {
+    width: 100%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 12px;
+    padding: 16px 24px;
+    border: 2px solid #fde68a;
+    border-radius: 10px;
+    background: var(--warning-light);
+  }
+  .fc-network-name {
+    font-size: 1rem;
+    font-weight: 700;
+    color: var(--warning);
+    font-family: 'IBM Plex Mono', monospace;
+    letter-spacing: 0.04em;
+  }
+  .fc-network-ico { font-size: 1.4rem; }
+
+  /* ── CONNECTOR (arrow between groups) ── */
+  .fc-connector {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    padding: 2px 0;
+    gap: 0;
+    position: relative;
+  }
+  .fc-conn-line {
+    width: 2px;
+    height: 32px;
+    background: var(--border-dark);
+  }
+  .fc-conn-arrow {
+    width: 0;
+    height: 0;
+    border-left: 7px solid transparent;
+    border-right: 7px solid transparent;
+    border-top: 9px solid var(--border-dark);
+  }
+  .fc-conn-label {
+    position: absolute;
+    left: 14px;
+    top: 50%;
+    transform: translateY(-50%);
+    font-size: 0.62rem;
+    font-family: 'IBM Plex Mono', monospace;
+    color: var(--text-muted);
+    white-space: nowrap;
+    background: var(--bg);
+    padding: 1px 6px;
+    border-radius: 3px;
+    border: 1px solid var(--border);
+  }
+
+  /* ── MODULE GRID ── */
+  .fc-modules {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(140px, 1fr));
+    gap: 8px;
+  }
+  .fc-module {
+    display: flex;
+    align-items: center;
+    gap: 9px;
+    padding: 10px 13px;
+    border: 1.5px solid var(--border);
+    border-radius: 8px;
+    background: var(--white);
+    transition: border-color 0.15s, box-shadow 0.15s;
+    cursor: default;
+  }
+  .fc-module:hover {
+    border-color: #a7f3d0;
+    box-shadow: 0 2px 8px rgba(5,150,105,0.07);
+  }
+  .fc-module-ico { font-size: 1.1rem; flex-shrink: 0; }
+  .fc-module-info { display: flex; flex-direction: column; gap: 1px; }
+  .fc-module-name {
+    font-size: 0.82rem;
+    font-weight: 600;
+    color: var(--text-primary);
+    line-height: 1.2;
+  }
+  .fc-module-sub {
+    font-size: 0.65rem;
+    color: var(--text-muted);
+    font-family: 'IBM Plex Mono', monospace;
+  }
+
+  /* ── DB NODES ── */
+  .fc-db-nodes {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 10px;
+  }
+  .fc-db {
+    flex: 1;
+    min-width: 180px;
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 14px 18px;
+    border: 1.5px solid var(--border-dark);
+    border-radius: 10px;
+    background: var(--white);
+    transition: box-shadow 0.15s;
+  }
+  .fc-db:hover { box-shadow: 0 3px 10px rgba(0,0,0,0.07); }
+  .fc-db-ico { font-size: 1.6rem; flex-shrink: 0; }
+  .fc-db-name { font-size: 0.9rem; font-weight: 700; color: var(--text-primary); }
+  .fc-db-sub  { font-size: 0.7rem; color: var(--text-muted); margin-top: 2px; font-family: 'IBM Plex Mono', monospace; }
+
+  /* ══════════════════════════════
+     ROLES
+  ══════════════════════════════ */
+  .roles-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
+    gap: 12px;
+  }
+  .role-card {
+    background: var(--white);
+    border: 1.5px solid var(--border);
+    border-radius: 12px;
+    padding: 20px;
+    cursor: pointer;
+    transition: all 0.15s;
+    animation: fadeUp 0.4s ease both;
+  }
+  .role-card:hover { border-color: var(--accent); box-shadow: 0 4px 16px rgba(26,86,219,0.08); }
+  .rc-top { display: flex; align-items: center; gap: 12px; margin-bottom: 12px; }
+  .rc-ico {
+    width: 38px; height: 38px;
+    border-radius: 9px;
+    background: var(--accent-light);
+    display: flex; align-items: center; justify-content: center;
+    font-size: 1.1rem; flex-shrink: 0;
+  }
+  .rc-title { font-size: 0.88rem; font-weight: 700; }
+  .rc-sub   { font-size: 0.71rem; color: var(--text-muted); margin-top: 2px; }
+  .rc-tags  { display: flex; flex-wrap: wrap; gap: 5px; }
+  .rc-tag {
+    font-size: 0.67rem; padding: 2px 8px;
+    border-radius: 4px; background: var(--bg);
+    border: 1px solid var(--border); color: var(--text-secondary);
+  }
+  .rc-arrow { margin-top: 14px; font-size: 0.72rem; color: var(--accent); font-weight: 600; }
+
+  /* ══════════════════════════════
+     FLOWS
+  ══════════════════════════════ */
+  .flows-header {
+    display: flex; gap: 6px; flex-wrap: wrap;
+    margin-bottom: 28px; padding-bottom: 20px;
+    border-bottom: 1px solid var(--border);
+  }
+  .ftab {
+    font-size: 0.75rem; font-weight: 500;
+    padding: 5px 14px; border-radius: 6px;
+    border: 1px solid var(--border);
+    background: var(--white); color: var(--text-secondary);
+    cursor: pointer; transition: all 0.15s;
+  }
+  .ftab.active { background: var(--accent); border-color: var(--accent); color: #fff; }
+  .ftab:hover:not(.active) { border-color: var(--border-dark); color: var(--text-primary); }
+
+  .flow-timeline { display: flex; flex-direction: column; }
+  .flow-step { display: flex; gap: 20px; animation: fadeUp 0.35s ease both; }
+  .ft-left { display: flex; flex-direction: column; align-items: center; flex-shrink: 0; width: 28px; }
+  .ft-num {
+    width: 28px; height: 28px; border-radius: 50%;
+    border: 1.5px solid var(--border-dark); background: var(--white);
+    display: flex; align-items: center; justify-content: center;
+    font-size: 0.65rem; font-weight: 700; color: var(--text-secondary);
+    margin-top: 6px; flex-shrink: 0;
+  }
+  .ft-line { width: 1px; flex: 1; min-height: 16px; background: var(--border); margin: 4px 0; }
+  .ft-body { flex: 1; padding-bottom: 28px; }
+  .ft-head { display: flex; align-items: center; gap: 8px; margin-bottom: 6px; flex-wrap: wrap; }
+  .ft-title { font-size: 0.9rem; font-weight: 700; }
+  .ft-tag {
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 0.58rem; font-weight: 600;
+    letter-spacing: 0.08em; padding: 2px 7px; border-radius: 4px;
+  }
+  .tag-CRUD    { background: #dbeafe; color: #1d4ed8; }
+  .tag-READ    { background: var(--success-light); color: var(--success); }
+  .tag-UPDATE  { background: var(--warning-light); color: var(--warning); }
+  .tag-PROCESS { background: var(--purple-light); color: var(--purple); }
+  .tag-DELETE  { background: var(--danger-light); color: var(--danger); }
+  .tag-CREATE  { background: #d1fae5; color: #065f46; }
+  .ft-desc { font-size: 0.78rem; color: var(--text-muted); margin-bottom: 10px; line-height: 1.6; }
+  .ft-actions { display: flex; flex-wrap: wrap; gap: 5px; }
+  .ft-action {
+    font-size: 0.7rem; padding: 3px 10px; border-radius: 5px;
+    background: var(--bg); border: 1px solid var(--border); color: var(--text-secondary);
+  }
+
+  @keyframes fadeUp {
+    from { opacity: 0; transform: translateY(12px); }
+    to   { opacity: 1; transform: translateY(0); }
+  }
+
+  @media (max-width: 600px) {
+    .topbar { padding: 0 16px; }
+    .main { padding: 24px 16px 60px; }
+    .logo span { display: none; }
+    .fc-modules { grid-template-columns: repeat(2, 1fr); }
+  }
+</style>
+</head>
 <body>
 
-    <aside class="sidebar" id="sidebar"></aside>
-    <div class="main">
-        <div class="topbar" id="topbar"></div>
-        <div class="content" id="content"></div>
+<header class="topbar">
+  <div class="logo">
+    <div class="logo-dot"></div>
+    School ERP <span>/ System Architecture</span>
+  </div>
+  <nav class="nav-tabs">
+    <button class="nav-tab active" onclick="show('arch',this)">Architecture</button>
+    <button class="nav-tab" onclick="show('roles',this)">Roles</button>
+    <button class="nav-tab" onclick="show('flows',this)">User Flows</button>
+  </nav>
+</header>
+
+<div class="main">
+
+  <!-- ═══ ARCHITECTURE ═══ -->
+  <div id="view-arch">
+    <div class="page-title">
+      <h2>System Architecture</h2>
+      <p>// end-to-end stack · top → bottom data flow</p>
     </div>
 
-    <script>
-        const data = {
-            roles: [
-                {
-                    id: "management", title: "Dean / Management", icon: "⬡",
-                    subtitle: "School owner and strategic controller",
-                    overview: ["Register School", "Manage Branches", "Manage Principal", "Subscription Control", "Analytics", "Deactivate School"],
-                    flows: [{
-                        title: "School Lifecycle Management", steps: [
-                            { title: "Register School", tag: "CREATE", desc: "Create a new school profile and configure initial settings.", actions: ["Enter school name", "Add address & contact details", "Upload school logo", "Submit registration", "Receive confirmation email"] },
-                            { title: "Update School Details", tag: "UPDATE", desc: "Modify existing school profile information.", actions: ["Edit school profile", "Update contact info", "Change branding / logo", "Save changes"] },
-                            { title: "Manage Branches", tag: "CRUD", desc: "Create and control multiple school branches.", actions: ["Create branch with address", "Assign branch principal", "Edit branch details", "Activate / deactivate branch", "View branch analytics"] },
-                            { title: "Manage Principal Accounts", tag: "CRUD", desc: "Control principal accounts and permissions.", actions: ["Create principal account", "Assign branch to principal", "Set role permissions", "Reset password", "Suspend / reactivate account", "Remove principal"] },
-                            { title: "Subscription Control", tag: "PROCESS", desc: "Manage billing, plans, and active features.", actions: ["View current plan", "Upgrade / downgrade plan", "Manage payment method", "View invoice history", "Enable / disable features", "Set renewal alerts"] },
-                            { title: "Analytics & Reports", tag: "READ", desc: "Review school-wide performance data.", actions: ["View enrollment stats", "Compare branch performance", "Export CSV / PDF", "View fee collection summary", "Monitor teacher-student ratios"] },
-                            { title: "Deactivate / Archive School", tag: "DELETE", desc: "Safely disable and archive the school system.", actions: ["Backup all school data", "Deactivate subscription", "Archive school record", "Restore if needed"] }
-                        ]
-                    }]
-                },
-                {
-                    id: "principal", title: "Principal", icon: "◈",
-                    subtitle: "School administrator and academic head",
-                    overview: ["Academic Year", "Classes", "Teachers", "Students", "Subjects", "Promotion", "Reports"],
-                    flows: [{
-                        title: "Academic Control Flow", steps: [
-                            { title: "Manage Academic Year", tag: "CRUD", desc: "Define and control academic sessions and terms.", actions: ["Create academic year with date range", "Edit start / end dates", "Set term / semester structure", "Activate year", "Deactivate / archive year"] },
-                            { title: "Manage Classes & Sections", tag: "CRUD", desc: "Setup and maintain class structure.", actions: ["Create class (Grade 1, 2…)", "Add sections (A, B, C…)", "Set class capacity", "Assign class teacher", "Update class info", "Delete empty class"] },
-                            { title: "Manage Teachers", tag: "CRUD", desc: "Onboard and manage teacher accounts.", actions: ["Create teacher account", "Assign subjects & classes", "Set teaching schedule", "Edit profile", "Deactivate teacher", "View performance"] },
-                            { title: "Manage Students", tag: "CRUD", desc: "Control all student records and status.", actions: ["Approve admission requests", "Update student details", "Assign class & section", "Transfer student", "Suspend student", "Remove student record"] },
-                            { title: "Subject & Syllabus Management", tag: "CRUD", desc: "Define curriculum and syllabus structure.", actions: ["Create subjects", "Link subjects to classes", "Upload syllabus documents", "Edit syllabus", "Set subject weightage"] },
-                            { title: "Timetable Management", tag: "CRUD", desc: "Build and manage class schedules.", actions: ["Create class timetable", "Add subject slots", "Assign teacher to slot", "Edit subject timing", "Handle teacher substitutions", "Publish timetable", "Delete timetable"] },
-                            { title: "Staff Management / accountant / admin", tag: "CRUD", desc: "Maintain records for all staff members.", actions: ["Add new staff member", "Edit staff profile", "Assign department & designation", "Upload staff documents", "Mark staff attendance", "Deactivate staff account"] },
-                            // { title: "Promote Students", tag: "PROCESS", desc: "Execute year-end promotion workflow.", actions: ["Select academic year","Set promotion criteria","Preview promotion results","Bulk promote eligible students","Hold / fail students manually","Archive previous year data"] },
-                            { title: "Generate School Reports", tag: "READ", desc: "Review and export school-wide reports.", actions: ["View attendance summary", "View exam result overview", "Export class-wise reports", "View teacher workload report", "Download annual report"] }
-                        ]
-                    }]
-                },
-                {
-                    id: "admin", title: "School Admin / Admissions Officer", icon: "◆",
-                    subtitle: "Operational manager",
-                    overview: ["Admissions", "Fee Management", "Staff Records", "Timetable", "Transport", "Inventory", "Notices"],
-                    flows: [{
-                        title: "Operations Management", steps: [
-                            { title: "Student Admission", tag: "CRUD", desc: "Handle complete student admission lifecycle.", actions: ["Create admission application", "Upload required documents", "Review application", "Edit student details", "Assign roll number & class", "Generate admission letter", "Delete rejected application"] },
-                            { title: "Manage Students", tag: "CRUD", desc: "Control all student records and status.", actions: ["Approve admission requests", "Update student details", "Assign class & section", "Transfer student", "Suspend student", "Remove student record"] },
-                            { title: "Fee Management / Account", tag: "CRUD", desc: "Manage fee structures and track payments.", actions: ["Create fee structure", "Assign fees to classes", "Record fee payment", "Generate fee receipt", "Apply discounts / scholarships", "Send payment reminders", "View outstanding dues"] },
-                            { title: "Staff Management", tag: "CRUD", desc: "Maintain records for all staff members.", actions: ["Add new staff member", "Edit staff profile", "Assign department & designation", "Upload staff documents", "Mark staff attendance", "Deactivate staff account"] },
-                            { title: "Timetable Management", tag: "CRUD", desc: "Build and manage class schedules.", actions: ["Create class timetable", "Add subject slots", "Assign teacher to slot", "Edit subject timing", "Handle teacher substitutions", "Publish timetable", "Delete timetable"] },
-                            { title: "Transport Management", tag: "CRUD", desc: "Oversee school transport and routes.", actions: ["Add vehicle details", "Assign driver & conductor", "Define routes & stops", "Assign students to routes", "Update route info", "Track vehicle status", "Remove vehicle"] },
-                            { title: "Inventory Management", tag: "CRUD", desc: "Track and manage school assets.", actions: ["Add inventory items", "Categorise items", "Update stock count", "Issue items to departments", "Record damaged / lost items", "Generate inventory report"] },
-                            { title: "Notice & Communication", tag: "CRUD", desc: "Publish and manage school-wide notices.", actions: ["Create notice / circular", "Target by role or class", "Schedule delivery", "Edit notice", "Delete notice", "View read receipts"] }
-                        ]
-                    }]
-                },
-                {
-                    id: "teacher", title: "Teacher", icon: "◉",
-                    subtitle: "Academic delivery and evaluation",
-                    overview: ["Attendance", "Lesson Plans", "Assignments", "Exams", "Marks", "Student Reports"],
-                    flows: [{
-                        title: "Teaching Lifecycle", steps: [
-                            { title: "Attendance Management", tag: "CRUD", desc: "Record and manage daily student attendance.", actions: ["Select class & date", "Mark present / absent / late", "Add attendance remarks", "Edit attendance record", "View monthly summary", "Delete incorrect record", "Export attendance report"] },
-                            // { title: "Lesson Plan Management", tag: "CRUD", desc: "Plan and track teaching content delivery.", actions: ["Create lesson plan", "Map to syllabus topics", "Set weekly schedule", "Upload supporting resources", "Mark topic as covered", "Edit plan", "Delete plan"] },
-                            { title: "Assignment Management", tag: "CRUD", desc: "Create, distribute, and grade assignments.", actions: ["Create assignment with instructions", "Set submission deadline", "Upload reference files", "Edit assignment", "View student submissions", "Grade submission", "Delete assignment"] },
-                            { title: "Exam Management", tag: "CRUD", desc: "Setup and schedule examinations.", actions: ["Create exam (unit test / term / annual)", "Set exam date, time & duration", "Define syllabus coverage", "Upload question paper", "Edit exam details", "Publish schedule", "Delete exam"] },
-                            { title: "Marks Entry & Results", tag: "CRUD", desc: "Record, verify, and publish student results.", actions: ["Enter marks per student", "Validate against max marks", "Update incorrect marks", "Calculate percentage & grade", "Publish results", "Generate mark sheet", "Delete incorrect entry"] },
-                            { title: "Student Performance Review", tag: "READ", desc: "Analyse academic progress and share feedback.", actions: ["View student-wise analytics", "Identify low performers", "Compare term performance", "Generate performance report", "Send feedback to parent", "Export result summary"] }
-                        ]
-                    }]
-                },
-                {
-                    id: "student", title: "Student", icon: "◎",
-                    subtitle: "Learner and participant",
-                    overview: ["Attendance", "Assignments", "Exams", "Results", "Notices", "Profile"],
-                    flows: [{
-                        title: "Student Academic Journey", steps: [
-                            { title: "Profile Management", tag: "UPDATE", desc: "Manage personal account and contact details.", actions: ["View profile & class details", "Edit contact information", "Upload profile photo", "Change password", "View enrolled subjects"] },
-                            { title: "View Attendance", tag: "READ", desc: "Track personal attendance records.", actions: ["View daily attendance", "Check monthly attendance %", "Download attendance report", "Request attendance correction"] },
-                            { title: "Assignment Submission", tag: "CRUD", desc: "Access and submit homework assignments.", actions: ["View assigned homework", "Download assignment instructions", "Upload answer file", "Resubmit before deadline", "View submission status", "Check graded feedback"] },
-                            { title: "Exam & Results", tag: "READ", desc: "Access exam schedules and published results.", actions: ["View upcoming exam schedule", "Download admit card", "Check published marks", "View grade report card", "Download mark sheet"] },
-                            { title: "Notices & Communication", tag: "READ", desc: "View school communications and events.", actions: ["View school notices", "Read teacher messages", "Reply to messages", "View event calendar"] }
-                        ]
-                    }]
-                },
-                {
-                    id: "parent", title: "Parent / Guardian", icon: "◍",
-                    subtitle: "Guardian and academic monitor",
-                    overview: ["Attendance Monitoring", "Performance Tracking", "Fee Payments", "Communication", "Profile"],
-                    flows: [{
-                        title: "Parent Control Flow", steps: [
-                            { title: "Monitor Child Attendance", tag: "READ", desc: "Track ward's daily school attendance.", actions: ["View attendance calendar", "Check attendance percentage", "Receive absence alerts", "Download attendance report"] },
-                            { title: "Monitor Academic Performance", tag: "READ", desc: "Review child's results and progress.", actions: ["View exam results", "Download report card", "Compare term-wise performance", "View assignment submission status", "Check marks per subject"] },
-                            { title: "Fee Payment & History", tag: "PROCESS", desc: "Manage tuition fee payments and records.", actions: ["View fee structure", "Check outstanding dues", "Pay fees online", "Download payment receipt", "View payment history"] },
-                            { title: "Communication with School", tag: "CRUD", desc: "Interact with teachers and administration.", actions: ["Send message to teacher", "Reply to notifications", "Schedule parent-teacher meeting", "View school notices", "Receive emergency alerts"] },
-                            { title: "Profile Management", tag: "UPDATE", desc: "Manage guardian account details.", actions: ["View linked child profiles", "Edit contact information", "Change password", "Update emergency contact", "Enable / disable notifications"] }
-                        ]
-                    }]
-                },
-                {
-                    id: "non_teaching", title: "Non-Teaching Staff", icon: "◑",
-                    subtitle: "Support operations and administration",
-                    overview: ["Attendance", "Leave Requests", "Duties", "Inventory", "Notices", "Profile"],
-                    flows: [{
-                        title: "Support Staff Lifecycle", steps: [
-                            { title: "Profile Management", tag: "UPDATE", desc: "Manage personal account and documents.", actions: ["View personal profile", "Edit contact details", "Upload documents", "Change password", "View assigned department"] },
-                            // { title: "Attendance Management", tag: "READ", desc: "Track own attendance records.", actions: ["View daily attendance record", "Check monthly attendance summary", "Download attendance report", "Request attendance correction"] },
-                            // { title: "Leave Management", tag: "CRUD", desc: "Apply and manage leave requests.", actions: ["Apply for leave", "Select leave type (sick / casual / earned)", "Upload supporting document", "View leave status", "Cancel pending request", "View leave balance"] },
-                            { title: "Duty & Task Management", tag: "READ", desc: "View and manage assigned duties.", actions: ["View daily assigned tasks", "Mark task as completed", "View duty schedule", "Receive duty change notifications"] },
-                            // { title: "Inventory Handling", tag: "PROCESS", desc: "Assist with stock and asset management.", actions: ["View assigned inventory items", "Record usage / issue of items", "Report damaged items", "Request new stock", "Confirm received deliveries"] },
-                            // { title: "Notice & Communication", tag: "READ", desc: "Stay informed with school communications.", actions: ["View school notices", "Read departmental messages", "Acknowledge circulars", "View event calendar"] }
-                        ]
-                    }]
-                }
-            ]
-        };
+    <div class="flowchart">
 
-        let active = data.roles[0];
-
-        const tagClass = { CRUD: 't-crud', CREATE: 't-create', UPDATE: 't-update', READ: 't-read', PROCESS: 't-process', DELETE: 't-delete' };
-        const legendColors = { CRUD: '#6d28d9', CREATE: '#15803d', UPDATE: '#1d4ed8', READ: '#a16207', PROCESS: '#c2410c', DELETE: '#b91c1c' };
-
-        function renderSidebar() {
-            document.getElementById('sidebar').innerHTML = `
-    <div class="sidebar-top">
-      <div class="brand-eyebrow">User Flow Docs</div>
-      <div class="brand-name">School MS</div>
-      <div class="brand-tagline">Role-based System Reference</div>
-    </div>
-    <div class="sidebar-nav">
-      <div class="nav-group-label" style="margin-bottom:10px">Roles</div>
-      ${data.roles.map(r => `
-        <button class="role-btn ${r.id === active.id ? 'active' : ''}" onclick="setRole('${r.id}')">
-          <div class="role-icon-box">${r.icon}</div>
-          <span>${r.title}</span>
-          <div class="role-btn-indicator"></div>
-        </button>
-      `).join('')}
-    </div>
-  `;
-        }
-
-        function renderTopbar() {
-            const r = active;
-            const steps = r.flows.reduce((s, f) => s + f.steps.length, 0);
-            document.getElementById('topbar').innerHTML = `
-    <div class="topbar-left">
-      <div class="tb-icon">${r.icon}</div>
-      <div>
-        <div class="tb-role">${r.title}</div>
-        <div class="tb-sub">${r.subtitle}</div>
-      </div>
-    </div>
-    <div class="tb-right">
-      <div class="tb-badge">${steps} Process Steps</div>
-    </div>
-  `;
-        }
-
-        function renderContent() {
-            const r = active;
-            document.getElementById('content').innerHTML = `
-
-
-    ${r.flows.map(flow => `
-      <div class="flow-section">
-        <div class="flow-header">
-          <div class="flow-header-label">${flow.title}</div>
-          <div class="flow-header-rule"></div>
+      <!-- USERS -->
+      <div class="fc-group" style="animation-delay:0s">
+        <div class="fc-group-label label-users">Users</div>
+        <div class="fc-nodes">
+          <div class="fc-node">
+            <div class="fc-node-ico">⬡</div>
+            <div class="fc-node-name">Dean / Management</div>
+            <div class="fc-node-sub">Web App</div>
+          </div>
+          <div class="fc-node">
+            <div class="fc-node-ico">◈</div>
+            <div class="fc-node-name">Principal</div>
+            <div class="fc-node-sub">Web App</div>
+          </div>
+          <div class="fc-node">
+            <div class="fc-node-ico">◆</div>
+            <div class="fc-node-name">School Admin</div>
+            <div class="fc-node-sub">Web App</div>
+          </div>
+          <div class="fc-node">
+            <div class="fc-node-ico">◉</div>
+            <div class="fc-node-name">Teacher</div>
+            <div class="fc-node-sub">Mobile App</div>
+          </div>
+          <div class="fc-node">
+            <div class="fc-node-ico">◎</div>
+            <div class="fc-node-name">Student</div>
+            <div class="fc-node-sub">Mobile App</div>
+          </div>
+          <div class="fc-node">
+            <div class="fc-node-ico">◍</div>
+            <div class="fc-node-name">Parent</div>
+            <div class="fc-node-sub">Mobile App</div>
+          </div>
+          <div class="fc-node">
+            <div class="fc-node-ico">◑</div>
+            <div class="fc-node-name">Non-Teaching Staff</div>
+            <div class="fc-node-sub">Mobile App</div>
+          </div>
         </div>
-        <div class="flowchart">
-          ${flow.steps.map((step, i) => `
-            <div class="flow-row">
-              <div class="spine">
-                <div class="spine-num">${i + 1}</div>
-                <div class="spine-line"></div>
-              </div>
-              <div class="step-card">
-                <div class="card-top">
-                  <div class="step-title">${step.title}</div>
-                  
-                </div>
-                <div class="step-desc">${step.desc}</div>
-                <div class="card-divider"></div>
-                <div class="actions-grid">
-                  ${step.actions.map(a => `
-                    <div class="action-pill"><div class="action-dot"></div>${a}</div>
-                  `).join('')}
-                </div>
-              </div>
+      </div>
+
+      <div class="fc-connector" style="animation-delay:0.06s">
+        <div class="fc-conn-line"></div>
+        <div class="fc-conn-arrow"></div>
+      </div>
+
+      <!-- FRONTEND -->
+      <div class="fc-group" style="animation-delay:0.10s">
+        <div class="fc-group-label label-frontend">Frontend</div>
+        <div class="fc-nodes">
+          <div class="fc-node fc-node-wide">
+            <div class="fc-node-ico">🖥️</div>
+            <div>
+              <div class="fc-node-name">React Web App</div>
+              <div class="fc-node-sub">Admin Panel · Dashboard</div>
             </div>
-          `).join('')}
+          </div>
+          <div class="fc-node fc-node-wide">
+            <div class="fc-node-ico">📱</div>
+            <div>
+              <div class="fc-node-name">React Native App</div>
+              <div class="fc-node-sub">Mobile Client</div>
+            </div>
+          </div>
         </div>
       </div>
-    `).join('')}
-  `;
-        }
 
-        function setRole(id) {
-            active = data.roles.find(r => r.id === id);
-            renderSidebar(); renderTopbar(); renderContent();
-            window.scrollTo({ top: 0, behavior: 'smooth' });
-        }
+      <div class="fc-connector" style="animation-delay:0.16s">
+        <div class="fc-conn-line"></div>
+        <div class="fc-conn-arrow"></div>
+        <div class="fc-conn-label">HTTPS / REST</div>
+      </div>
 
-        renderSidebar(); renderTopbar(); renderContent();
-    </script>
+      <!-- NETWORK -->
+      <div class="fc-group" style="animation-delay:0.20s">
+        <div class="fc-group-label label-network">Network Layer</div>
+        <div class="fc-network">
+          <div class="fc-network-ico">🔒</div>
+          <div class="fc-network-name">HTTPS / REST API</div>
+        </div>
+      </div>
+
+      <div class="fc-connector" style="animation-delay:0.25s">
+        <div class="fc-conn-line"></div>
+        <div class="fc-conn-arrow"></div>
+      </div>
+
+      <!-- BACKEND -->
+      <div class="fc-group" style="animation-delay:0.28s">
+        <div class="fc-group-label label-backend">Backend</div>
+        <div class="fc-server">
+          <div class="fc-server-name">NestJS Application Server</div>
+          <div class="fc-server-sub">Modular · TypeScript · REST API</div>
+        </div>
+        <div class="fc-modules">
+          <div class="fc-module"><div class="fc-module-ico">🔐</div><div class="fc-module-info"><div class="fc-module-name">Auth Module</div><div class="fc-module-sub">JWT · Guards</div></div></div>
+          <div class="fc-module"><div class="fc-module-ico">👤</div><div class="fc-module-info"><div class="fc-module-name">User & Role</div><div class="fc-module-sub">Module</div></div></div>
+          <div class="fc-module"><div class="fc-module-ico">🏫</div><div class="fc-module-info"><div class="fc-module-name">School & Branch</div><div class="fc-module-sub">Module</div></div></div>
+          <div class="fc-module"><div class="fc-module-ico">📚</div><div class="fc-module-info"><div class="fc-module-name">Academic</div><div class="fc-module-sub">Classes · Subjects</div></div></div>
+          <div class="fc-module"><div class="fc-module-ico">✅</div><div class="fc-module-info"><div class="fc-module-name">Attendance</div><div class="fc-module-sub">Module</div></div></div>
+          <div class="fc-module"><div class="fc-module-ico">📝</div><div class="fc-module-info"><div class="fc-module-name">Exam & Result</div><div class="fc-module-sub">Module</div></div></div>
+          <div class="fc-module"><div class="fc-module-ico">💰</div><div class="fc-module-info"><div class="fc-module-name">Fee & Billing</div><div class="fc-module-sub">Module</div></div></div>
+          <div class="fc-module"><div class="fc-module-ico">🚌</div><div class="fc-module-info"><div class="fc-module-name">Transport</div><div class="fc-module-sub">Module</div></div></div>
+          <div class="fc-module"><div class="fc-module-ico">📦</div><div class="fc-module-info"><div class="fc-module-name">Inventory</div><div class="fc-module-sub">Module</div></div></div>
+          <div class="fc-module"><div class="fc-module-ico">🔔</div><div class="fc-module-info"><div class="fc-module-name">Notification</div><div class="fc-module-sub">Module</div></div></div>
+          <div class="fc-module"><div class="fc-module-ico">📊</div><div class="fc-module-info"><div class="fc-module-name">Reports</div><div class="fc-module-sub">Analytics</div></div></div>
+        </div>
+      </div>
+
+      <div class="fc-connector" style="animation-delay:0.34s">
+        <div class="fc-conn-line"></div>
+        <div class="fc-conn-arrow"></div>
+      </div>
+
+      <!-- DATABASE -->
+      <div class="fc-group" style="animation-delay:0.38s">
+        <div class="fc-group-label label-database">Data Layer</div>
+        <div class="fc-db-nodes">
+          <div class="fc-db">
+            <div class="fc-db-ico">🐘</div>
+            <div>
+              <div class="fc-db-name">PostgreSQL</div>
+              <div class="fc-db-sub">Primary database · All modules</div>
+            </div>
+          </div>
+          <div class="fc-db">
+            <div class="fc-db-ico">⚡</div>
+            <div>
+              <div class="fc-db-name">Redis Cache</div>
+              <div class="fc-db-sub">Attendance · Analytics</div>
+            </div>
+          </div>
+          <div class="fc-db">
+            <div class="fc-db-ico">☁️</div>
+            <div>
+              <div class="fc-db-name">Cloud Storage</div>
+              <div class="fc-db-sub">Exams · Notices · Docs</div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+    </div><!-- /flowchart -->
+  </div>
+
+  <!-- ═══ ROLES ═══ -->
+  <div id="view-roles">
+    <div class="page-title">
+      <h2>Roles Overview</h2>
+      <p>// 7 roles · click any card to view its user flow</p>
+    </div>
+    <div class="roles-grid" id="roles-grid"></div>
+  </div>
+
+  <!-- ═══ FLOWS ═══ -->
+  <div id="view-flows">
+    <div class="page-title">
+      <h2>User Flows</h2>
+      <p>// step-by-step operations per role</p>
+    </div>
+    <div class="flows-header" id="ftabs"></div>
+    <div class="flow-timeline" id="fsteps"></div>
+  </div>
+
+</div><!-- /main -->
+
+<script>
+const data = {
+  roles: [
+    { id:"management", title:"Dean / Management", icon:"⬡", subtitle:"School owner and strategic controller", overview:["Register School","Manage Branches","Manage Principal","Subscription Control","Analytics","Deactivate School"], flows:[{ steps:[ { title:"Register School", tag:"CREATE", desc:"Create a new school profile and configure initial settings.", actions:["Enter school name","Add address & contact details","Upload school logo","Submit registration","Receive confirmation email"] }, { title:"Update School Details", tag:"UPDATE", desc:"Modify existing school profile information.", actions:["Edit school profile","Update contact info","Change branding / logo","Save changes"] }, { title:"Manage Branches", tag:"CRUD", desc:"Create and control multiple school branches.", actions:["Create branch with address","Assign branch principal","Edit branch details","Activate / deactivate branch","View branch analytics"] }, { title:"Manage Principal Accounts", tag:"CRUD", desc:"Control principal accounts and permissions.", actions:["Create principal account","Assign branch to principal","Set role permissions","Reset password","Suspend / reactivate account","Remove principal"] }, { title:"Subscription Control", tag:"PROCESS", desc:"Manage billing, plans, and active features.", actions:["View current plan","Upgrade / downgrade plan","Manage payment method","View invoice history","Enable / disable features","Set renewal alerts"] }, { title:"Analytics & Reports", tag:"READ", desc:"Review school-wide performance data.", actions:["View enrollment stats","Compare branch performance","Export CSV / PDF","View fee collection summary","Monitor teacher-student ratios"] }, { title:"Deactivate / Archive School", tag:"DELETE", desc:"Safely disable and archive the school system.", actions:["Backup all school data","Deactivate subscription","Archive school record","Restore if needed"] } ]}] },
+    { id:"principal", title:"Principal", icon:"◈", subtitle:"School administrator and academic head", overview:["Academic Year","Classes","Teachers","Students","Subjects","Timetable","Reports"], flows:[{ steps:[ { title:"Manage Academic Year", tag:"CRUD", desc:"Define and control academic sessions and terms.", actions:["Create academic year with date range","Edit start / end dates","Set term / semester structure","Activate year","Deactivate / archive year"] }, { title:"Manage Classes & Sections", tag:"CRUD", desc:"Setup and maintain class structure.", actions:["Create class (Grade 1, 2…)","Add sections (A, B, C…)","Set class capacity","Assign class teacher","Update class info","Delete empty class"] }, { title:"Manage Teachers", tag:"CRUD", desc:"Onboard and manage teacher accounts.", actions:["Create teacher account","Assign subjects & classes","Set teaching schedule","Edit profile","Deactivate teacher","View performance"] }, { title:"Manage Students", tag:"CRUD", desc:"Control all student records and status.", actions:["Approve admission requests","Update student details","Assign class & section","Transfer student","Suspend student","Remove student record"] }, { title:"Subject & Syllabus Management", tag:"CRUD", desc:"Define curriculum and syllabus structure.", actions:["Create subjects","Link subjects to classes","Upload syllabus documents","Edit syllabus","Set subject weightage"] }, { title:"Timetable Management", tag:"CRUD", desc:"Build and manage class schedules.", actions:["Create class timetable","Add subject slots","Assign teacher to slot","Edit subject timing","Handle teacher substitutions","Publish timetable","Delete timetable"] }, { title:"Staff Management", tag:"CRUD", desc:"Maintain records for all staff members.", actions:["Add new staff member","Edit staff profile","Assign department & designation","Upload staff documents","Mark staff attendance","Deactivate staff account"] }, { title:"Generate School Reports", tag:"READ", desc:"Review and export school-wide reports.", actions:["View attendance summary","View exam result overview","Export class-wise reports","View teacher workload report","Download annual report"] } ]}] },
+    { id:"admin", title:"School Admin / Admissions Officer", icon:"◆", subtitle:"Operational manager", overview:["Admissions","Fee Management","Staff Records","Timetable","Transport","Inventory","Notices"], flows:[{ steps:[ { title:"Student Admission", tag:"CRUD", desc:"Handle complete student admission lifecycle.", actions:["Create admission application","Upload required documents","Review application","Edit student details","Assign roll number & class","Generate admission letter","Delete rejected application"] }, { title:"Manage Students", tag:"CRUD", desc:"Control all student records and status.", actions:["Approve admission requests","Update student details","Assign class & section","Transfer student","Suspend student","Remove student record"] }, { title:"Fee Management / Account", tag:"CRUD", desc:"Manage fee structures and track payments.", actions:["Create fee structure","Assign fees to classes","Record fee payment","Generate fee receipt","Apply discounts / scholarships","Send payment reminders","View outstanding dues"] }, { title:"Staff Management", tag:"CRUD", desc:"Maintain records for all staff members.", actions:["Add new staff member","Edit staff profile","Assign department & designation","Upload staff documents","Mark staff attendance","Deactivate staff account"] }, { title:"Timetable Management", tag:"CRUD", desc:"Build and manage class schedules.", actions:["Create class timetable","Add subject slots","Assign teacher to slot","Edit subject timing","Handle teacher substitutions","Publish timetable","Delete timetable"] }, { title:"Transport Management", tag:"CRUD", desc:"Oversee school transport and routes.", actions:["Add vehicle details","Assign driver & conductor","Define routes & stops","Assign students to routes","Update route info","Track vehicle status","Remove vehicle"] }, { title:"Inventory Management", tag:"CRUD", desc:"Track and manage school assets.", actions:["Add inventory items","Categorise items","Update stock count","Issue items to departments","Record damaged / lost items","Generate inventory report"] }, { title:"Notice & Communication", tag:"CRUD", desc:"Publish and manage school-wide notices.", actions:["Create notice / circular","Target by role or class","Schedule delivery","Edit notice","Delete notice","View read receipts"] } ]}] },
+    { id:"teacher", title:"Teacher", icon:"◉", subtitle:"Academic delivery and evaluation", overview:["Attendance","Assignments","Exams","Marks","Student Reports"], flows:[{ steps:[ { title:"Attendance Management", tag:"CRUD", desc:"Record and manage daily student attendance.", actions:["Select class & date","Mark present / absent / late","Add attendance remarks","Edit attendance record","View monthly summary","Delete incorrect record","Export attendance report"] }, { title:"Assignment Management", tag:"CRUD", desc:"Create, distribute, and grade assignments.", actions:["Create assignment with instructions","Set submission deadline","Upload reference files","Edit assignment","View student submissions","Grade submission","Delete assignment"] }, { title:"Exam Management", tag:"CRUD", desc:"Setup and schedule examinations.", actions:["Create exam (unit test / term / annual)","Set exam date, time & duration","Define syllabus coverage","Upload question paper","Edit exam details","Publish schedule","Delete exam"] }, { title:"Marks Entry & Results", tag:"CRUD", desc:"Record, verify, and publish student results.", actions:["Enter marks per student","Validate against max marks","Update incorrect marks","Calculate percentage & grade","Publish results","Generate mark sheet","Delete incorrect entry"] }, { title:"Student Performance Review", tag:"READ", desc:"Analyse academic progress and share feedback.", actions:["View student-wise analytics","Identify low performers","Compare term performance","Generate performance report","Send feedback to parent","Export result summary"] } ]}] },
+    { id:"student", title:"Student", icon:"◎", subtitle:"Learner and participant", overview:["Attendance","Assignments","Exams","Results","Notices","Profile"], flows:[{ steps:[ { title:"Profile Management", tag:"UPDATE", desc:"Manage personal account and contact details.", actions:["View profile & class details","Edit contact information","Upload profile photo","Change password","View enrolled subjects"] }, { title:"View Attendance", tag:"READ", desc:"Track personal attendance records.", actions:["View daily attendance","Check monthly attendance %","Download attendance report","Request attendance correction"] }, { title:"Assignment Submission", tag:"CRUD", desc:"Access and submit homework assignments.", actions:["View assigned homework","Download assignment instructions","Upload answer file","Resubmit before deadline","View submission status","Check graded feedback"] }, { title:"Exam & Results", tag:"READ", desc:"Access exam schedules and published results.", actions:["View upcoming exam schedule","Download admit card","Check published marks","View grade report card","Download mark sheet"] }, { title:"Notices & Communication", tag:"READ", desc:"View school communications and events.", actions:["View school notices","Read teacher messages","Reply to messages","View event calendar"] } ]}] },
+    { id:"parent", title:"Parent / Guardian", icon:"◍", subtitle:"Guardian and academic monitor", overview:["Attendance Monitoring","Performance Tracking","Fee Payments","Communication","Profile"], flows:[{ steps:[ { title:"Monitor Child Attendance", tag:"READ", desc:"Track ward's daily school attendance.", actions:["View attendance calendar","Check attendance percentage","Receive absence alerts","Download attendance report"] }, { title:"Monitor Academic Performance", tag:"READ", desc:"Review child's results and progress.", actions:["View exam results","Download report card","Compare term-wise performance","View assignment submission status","Check marks per subject"] }, { title:"Fee Payment & History", tag:"PROCESS", desc:"Manage tuition fee payments and records.", actions:["View fee structure","Check outstanding dues","Pay fees online","Download payment receipt","View payment history"] }, { title:"Communication with School", tag:"CRUD", desc:"Interact with teachers and administration.", actions:["Send message to teacher","Reply to notifications","Schedule parent-teacher meeting","View school notices","Receive emergency alerts"] }, { title:"Profile Management", tag:"UPDATE", desc:"Manage guardian account details.", actions:["View linked child profiles","Edit contact information","Change password","Update emergency contact","Enable / disable notifications"] } ]}] },
+    { id:"non_teaching", title:"Non-Teaching Staff", icon:"◑", subtitle:"Support operations and administration", overview:["Attendance","Leave Requests","Duties","Inventory","Notices","Profile"], flows:[{ steps:[ { title:"Profile Management", tag:"UPDATE", desc:"Manage personal account and documents.", actions:["View personal profile","Edit contact details","Upload documents","Change password","View assigned department"] }, { title:"Duty & Task Management", tag:"READ", desc:"View and manage assigned duties.", actions:["View daily assigned tasks","Mark task as completed","View duty schedule","Receive duty change notifications"] } ]}] }
+  ]
+};
+
+let activeFlowIdx = 0;
+
+function show(view, btn) {
+  ['arch','roles','flows'].forEach(v => document.getElementById('view-'+v).style.display = 'none');
+  document.getElementById('view-'+view).style.display = 'block';
+  document.querySelectorAll('.nav-tab').forEach(t => t.classList.remove('active'));
+  btn.classList.add('active');
+  if (view === 'roles') renderRoles();
+  if (view === 'flows') renderFlowPage();
+}
+
+function renderRoles() {
+  document.getElementById('roles-grid').innerHTML = data.roles.map((r, i) => `
+    <div class="role-card" style="animation-delay:${i*0.05}s" onclick="goFlow(${i})">
+      <div class="rc-top">
+        <div class="rc-ico">${r.icon}</div>
+        <div><div class="rc-title">${r.title}</div><div class="rc-sub">${r.subtitle}</div></div>
+      </div>
+      <div class="rc-tags">${r.overview.map(o => `<span class="rc-tag">${o}</span>`).join('')}</div>
+      <div class="rc-arrow">View flow →</div>
+    </div>
+  `).join('');
+}
+
+function goFlow(i) {
+  activeFlowIdx = i;
+  show('flows', document.querySelectorAll('.nav-tab')[2]);
+}
+
+function renderFlowPage() {
+  document.getElementById('ftabs').innerHTML = data.roles.map((r, i) => `
+    <button class="ftab${i===activeFlowIdx?' active':''}" onclick="selectFlow(${i})">${r.icon} ${r.title}</button>
+  `).join('');
+  renderSteps();
+}
+
+function selectFlow(i) {
+  activeFlowIdx = i;
+  document.querySelectorAll('.ftab').forEach((t,idx) => t.classList.toggle('active', idx===i));
+  renderSteps();
+}
+
+function renderSteps() {
+  const steps = data.roles[activeFlowIdx].flows[0].steps;
+  document.getElementById('fsteps').innerHTML = steps.map((s, i) => `
+    <div class="flow-step" style="animation-delay:${i*0.06}s">
+      <div class="ft-left">
+        <div class="ft-num">${i+1}</div>
+        ${i < steps.length-1 ? '<div class="ft-line"></div>' : ''}
+      </div>
+      <div class="ft-body">
+        <div class="ft-head">
+          <div class="ft-title">${s.title}</div>
+          <span class="ft-tag tag-${s.tag}">${s.tag}</span>
+        </div>
+        <div class="ft-desc">${s.desc}</div>
+        <div class="ft-actions">${s.actions.map(a => `<span class="ft-action">${a}</span>`).join('')}</div>
+      </div>
+    </div>
+  `).join('');
+}
+</script>
 </body>
-
 </html>
